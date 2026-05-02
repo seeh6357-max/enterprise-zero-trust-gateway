@@ -1,0 +1,17 @@
+name: Dependency Vulnerability Audit
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Runs every Sunday at midnight
+jobs:
+  audit-nodejs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: cd services/1-api-gateway && npm audit --audit-level=high
+
+  audit-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: pip install safety
+      - run: safety check -r services/4-security-operations/requirements.txt

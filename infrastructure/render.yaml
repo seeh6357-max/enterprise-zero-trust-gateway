@@ -35,3 +35,12 @@ services:
         value: http://3-backend-api:10000 
       - key: JWT_SECRET
         generateValue: true # Render will auto-generate a secure key
+        # 4. The Frontend Dashboard (Static Site on Global CDN)
+  - type: web
+    name: 5-admin-dashboard
+    env: static
+    buildCommand: cd services/5-admin-dashboard && npm install && npm run build
+    staticPublishPath: services/5-admin-dashboard/dist
+    envVars:
+      - key: VITE_GATEWAY_URL
+        value: https://1-api-gateway-xyz.onrender.com # You will update this with your actual Render URL later

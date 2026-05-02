@@ -1,4 +1,5 @@
 // services/1-api-gateway/ingress-router.js
+const sanitizePayload = require('./middleware/payload-sanitizer');
 const express = require('express');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -11,7 +12,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:10000';
 
 // 1. Basic Security Headers (Defense in Depth)
 app.use(helmet());
-
+app.use(express.json()); app.use(sanitizePayload);
 // 2. Global Rate Limiting (Prevents DoS and Brute Force attacks)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

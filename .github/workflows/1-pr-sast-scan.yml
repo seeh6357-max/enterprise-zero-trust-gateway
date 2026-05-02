@@ -1,0 +1,41 @@
+# .github/workflows/1-pr-sast-scan.yml
+name: Static Application Security Testing (SAST)
+
+on:
+  pull_request:
+    branches: [ "main" ] # Runs whenever a PR targets the main branch
+
+jobs:
+  analyze:
+    name: CodeQL Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'python' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Initializes the CodeQL tools for scanning
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        queries: security-extended,security-and-quality
+
+    # Autobuild attempts to build any compiled languages. Not strictly needed for Python/JS but good practice.
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+
+    # Performs the actual vulnerability scan
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{matrix.language}}"
