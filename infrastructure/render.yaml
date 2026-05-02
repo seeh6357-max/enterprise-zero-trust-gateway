@@ -1,0 +1,37 @@
+# infrastructure/render.yaml
+services:
+  # 1. Redis Cache (Used for Rate Limiting to prevent brute force)
+  - type: redis
+    name: gateway-redis
+    ipAllowList: [] # Strict: Only accessible from within Render's private network
+    plan: free
+
+  # 2. The Protected Backend (Isolated from the Internet)
+  - type: web
+    name: 3-backend-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: PORT
+        value: 10000
+    # Crucial Zero-Trust Step: We do not attach a custom domain. 
+    # It is only accessible via its internal Render URL (e.g., http://3-backend-api:10000)
+
+  # 3. The API Gateway (The Public Entry Point)
+  - type: web
+    name: 1-api-gateway
+    env: node
+    buildCommand: npm install
+    startCommand: node ingress-router.js
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: gateway-redis
+          property: connectionString
+      - key: BACKEND_URL
+        # This points to the internal, private network URL of the backend
+        value: http://3-backend-api:10000 
+      - key: JWT_SECRET
+        generateValue: true # Render will auto-generate a secure key
