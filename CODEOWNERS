@@ -1,0 +1,6 @@
+# Global owner
+* @<your-github-username>
+
+# Require specific approval for infrastructure and security changes
+/infrastructure/ @<your-github-username>
+/.github/workflows/ @<your-github-username>
