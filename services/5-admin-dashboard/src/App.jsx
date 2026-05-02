@@ -5,7 +5,8 @@ function App() {
   const [secureData, setSecureData] = useState(null);
   const [error, setError] = useState('');
   const [isFetching, setIsFetching] = useState(false);
-
+  const AUTH_URL = import.meta.env.VITE_AUTH_URL || '/api/auth';
+  const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || '/api/v1';
   const handleLogin = async () => {
     setIsFetching(true);
     try {
