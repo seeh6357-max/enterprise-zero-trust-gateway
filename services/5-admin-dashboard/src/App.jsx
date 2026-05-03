@@ -5,12 +5,16 @@ function App() {
   const [secureData, setSecureData] = useState(null);
   const [error, setError] = useState('');
   const [isFetching, setIsFetching] = useState(false);
+  
+  // These variables grab the URLs from Render
   const AUTH_URL = import.meta.env.VITE_AUTH_URL || '/api/auth';
   const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || '/api/v1';
+
   const handleLogin = async () => {
     setIsFetching(true);
     try {
-      const response = await fetch('/api/auth/login', {
+      // FIX: Dynamically using the AUTH_URL variable!
+      const response = await fetch(`${AUTH_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: 'admin', password: 'cybersec2026' })
@@ -31,7 +35,8 @@ function App() {
   const fetchSecureData = async () => {
     setIsFetching(true);
     try {
-      const response = await fetch('/api/v1/secure-data/confidential', {
+      // FIX: Dynamically using the GATEWAY_URL variable!
+      const response = await fetch(`${GATEWAY_URL}/secure-data/confidential`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.status === 403 || response.status === 401) {
