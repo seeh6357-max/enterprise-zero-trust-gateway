@@ -1,46 +1,36 @@
 # infrastructure/render.yaml
-services:
-  # 1. Redis Cache (Used for Rate Limiting to prevent brute force)
-  - type: redis
-    name: gateway-redis
-    ipAllowList: [] # Strict: Only accessible from within Render's private network
-    plan: free
+# Modified for Render Free Tier Compatibility
 
-  # 2. The Protected Backend (Isolated from the Internet)
+services:
+  # 1. The Identity Provider (Auth)
+  - type: web
+    name: 2-auth-provider
+    plan: free
+    env: node
+    buildCommand: cd services/2-auth-provider && npm install
+    startCommand: cd services/2-auth-provider && node oauth-issuer.js
+
+  # 2. The Python Backend (Converted to Public Web for Free Tier)
   - type: web
     name: 3-backend-api
+    plan: free
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app:app --host 0.0.0.0 --port 10000
-    envVars:
-      - key: PORT
-        value: 10000
-    # Crucial Zero-Trust Step: We do not attach a custom domain. 
-    # It is only accessible via its internal Render URL (e.g., http://3-backend-api:10000)
+    buildCommand: cd services/3-backend-api && pip install fastapi uvicorn pydantic pyjwt
+    # Render assigns a dynamic port via the $PORT variable, so we must bind to it
+    startCommand: cd services/3-backend-api && python -m uvicorn app:app --host 0.0.0.0 --port $PORT
 
-  # 3. The API Gateway (The Public Entry Point)
+  # 3. The API Gateway (Edge Proxy)
   - type: web
     name: 1-api-gateway
+    plan: free
     env: node
-    buildCommand: npm install
-    startCommand: node ingress-router.js
-    envVars:
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: gateway-redis
-          property: connectionString
-      - key: BACKEND_URL
-        # This points to the internal, private network URL of the backend
-        value: http://3-backend-api:10000 
-      - key: JWT_SECRET
-        generateValue: true # Render will auto-generate a secure key
-        # 4. The Frontend Dashboard (Static Site on Global CDN)
+    buildCommand: cd services/1-api-gateway && npm install
+    startCommand: cd services/1-api-gateway && node ingress-router.js
+
+  # 4. The Frontend Dashboard (Static Site)
   - type: web
     name: 5-admin-dashboard
     env: static
     buildCommand: cd services/5-admin-dashboard && npm install && npm run build
     staticPublishPath: services/5-admin-dashboard/dist
-    envVars:
-      - key: VITE_GATEWAY_URL
-        value: https://1-api-gateway-xyz.onrender.com # You will update this with your actual Render URL later
+    # We will manually add the VITE_ variables in the Render dashboard later
