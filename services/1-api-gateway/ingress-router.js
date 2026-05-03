@@ -5,14 +5,24 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const jwt = require('jsonwebtoken');
+const cors = require('cors'); // <-- ADDED: CORS package
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:10000';
 
+// <-- ADDED: CORS Middleware (Must be before routes and proxies)
+app.use(cors({
+    origin: '*', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // 1. Basic Security Headers (Defense in Depth)
 app.use(helmet());
-app.use(express.json()); app.use(sanitizePayload);
+app.use(express.json()); 
+app.use(sanitizePayload);
+
 // 2. Global Rate Limiting (Prevents DoS and Brute Force attacks)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

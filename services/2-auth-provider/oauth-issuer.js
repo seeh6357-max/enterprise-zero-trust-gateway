@@ -1,11 +1,20 @@
 // services/2-auth-provider/oauth-issuer.js
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const cors = require('cors'); // <-- ADDED: CORS package
 
 const app = express();
+
+// <-- ADDED: CORS Middleware (Must be before routes)
+app.use(cors({
+    origin: '*', // Allows all origins for now. You can restrict this to your frontend URL later.
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 // CRITICAL: This secret MUST exactly match the one in your Gateway!
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-local-dev'; 
 
