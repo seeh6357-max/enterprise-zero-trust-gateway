@@ -12,13 +12,12 @@ const PORT = process.env.PORT || 3000;
 
 /**
  * 1. BACKEND TARGET CONFIGURATION
- * This is where the bouncer sends the traffic after checking the ID.
  */
 const BACKEND_URL = process.env.BACKEND_URL || 'https://three-resource-server.onrender.com';
 
 // Enable CORS so your Dashboard can communicate with this Gateway
 app.use(cors({
-    origin: '*', // For production, replace '*' with your specific dashboard URL
+    origin: '*', 
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -37,7 +36,6 @@ app.use(limiter);
 
 /**
  * 3. ZERO-TRUST TOKEN VERIFICATION
- * The "Bouncer" logic.
  */
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -50,10 +48,6 @@ const verifyToken = (req, res, next) => {
     const token = authHeader.split(' ')[1]; 
 
     try {
-        /**
-         * CRITICAL: The secret MUST match between IdP and Gateway.
-         * We check the Render Environment Variable first.
-         */
         const secret = process.env.JWT_SECRET || 'cybersec-secret-2026';
         const decoded = jwt.verify(token, secret);
         
@@ -68,18 +62,16 @@ const verifyToken = (req, res, next) => {
 
 /**
  * 4. REVERSE PROXY WITH ERROR HANDLING
+ * FIX: Removed pathRewrite. It will now send the exact URL to the Resource Server.
  */
 app.use('/api/v1/secure-data', verifyToken, createProxyMiddleware({ 
     target: BACKEND_URL,
     changeOrigin: true,
-    // Prevents the gateway from hanging if the resource server is asleep/spinning up
     proxyTimeout: 10000, 
     timeout: 10000,
-    pathRewrite: {
-        '^/api/v1/secure-data': '', 
-    },
     onProxyReq: (proxyReq, req, res) => {
-        console.log(`[PROXY_LOG] Forwarding request to: ${BACKEND_URL}${req.url}`);
+        // FIX: Changed req.url to req.originalUrl to log the true path being requested
+        console.log(`[PROXY_LOG] Forwarding request to: ${BACKEND_URL}${req.originalUrl}`);
     },
     onError: (err, req, res) => {
         console.error('[PROXY_ERR] Connection to Resource Server failed:', err.message);
